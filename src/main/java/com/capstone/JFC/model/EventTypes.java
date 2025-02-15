@@ -1,0 +1,8 @@
+package com.capstone.JFC.model;
+
+public enum EventTypes {
+    SCAN_PULL,
+    SCAN_PARSE,
+    UPDATE_FINDING,
+    TICKETING
+}
