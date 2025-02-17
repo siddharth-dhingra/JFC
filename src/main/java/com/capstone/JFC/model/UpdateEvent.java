@@ -1,16 +1,23 @@
 package com.capstone.JFC.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class UpdateEvent {
 
-    private String tenantId;      
-    private ToolType toolType;    
-    private long alertNumber;   
-    private String newState;    
-    private String reason;      
+    private String tenantId;    
+    private ToolType toolType;  
+    private long alertNumber;
+    private String newState;
+    private String reason;
+
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private String destinationTopic;
+
+    private String jobId;
 
     public UpdateEvent() {}
 
-    public UpdateEvent(String tenantId, ToolType toolType,
+    public UpdateEvent(String tenantId, ToolType toolType, 
                        long alertNumber, String newState, String reason) {
         this.tenantId = tenantId;
         this.toolType = toolType;
@@ -19,12 +26,16 @@ public class UpdateEvent {
         this.reason = reason;
     }
 
-    // Getters and setters
+    public String getTenantId() {
+        return tenantId;
+    }
+    public void setTenantId(String tenantId) {
+        this.tenantId = tenantId;
+    }
 
     public ToolType getToolType() {
         return toolType;
     }
-
     public void setToolType(ToolType toolType) {
         this.toolType = toolType;
     }
@@ -32,7 +43,6 @@ public class UpdateEvent {
     public long getAlertNumber() {
         return alertNumber;
     }
-
     public void setAlertNumber(long alertNumber) {
         this.alertNumber = alertNumber;
     }
@@ -40,7 +50,6 @@ public class UpdateEvent {
     public String getNewState() {
         return newState;
     }
-
     public void setNewState(String newState) {
         this.newState = newState;
     }
@@ -48,24 +57,21 @@ public class UpdateEvent {
     public String getReason() {
         return reason;
     }
-
     public void setReason(String reason) {
         this.reason = reason;
     }
 
-    public String getTenantId() {
-        return tenantId;
+    public String getDestinationTopic() {
+        return destinationTopic;
+    }
+    public void setDestinationTopic(String destinationTopic) {
+        this.destinationTopic = destinationTopic;
     }
 
-    public void setTenantId(String tenantId) {
-        this.tenantId = tenantId;
+    public String getJobId() {
+        return jobId;
     }
-
-    @Override
-    public String toString() {
-        return "UpdateEvent {tenantId=" + tenantId + ", toolType=" + toolType + ", alertNumber=" + alertNumber
-                + ", newState=" + newState + ", reason=" + reason + "}";
+    public void setJobId(String jobId) {
+        this.jobId = jobId;
     }
-
-    
 }

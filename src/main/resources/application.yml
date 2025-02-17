@@ -19,12 +19,7 @@ spring:
 app:
   kafka:
     topics:
-      jfc-auth: jfc-auth-topic
-      jfc-auth-update: jfc-auth-topic1
-      jfc-tool: jfc-tool-topic
-      tool-jfc: tool-jfc-topic
-      jfc-parser: jfc-parser-topic
-      jfc-bgjobs: jfc-bgjobs-topic
+      jfc-unified: job-topic
       job-acknowledgement: job-acknowledgement-topic
 
 logging:

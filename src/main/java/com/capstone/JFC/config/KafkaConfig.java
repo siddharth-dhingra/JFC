@@ -1,9 +1,6 @@
 package com.capstone.JFC.config;
 
 import com.capstone.JFC.dto.JobAcknowledgement;
-import com.capstone.JFC.dto.ScanParseEvent;
-import com.capstone.JFC.dto.ScanRequestEvent;
-import com.capstone.JFC.dto.UpdateAlertEvent;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -32,98 +29,32 @@ public class KafkaConfig {
     @Value("${spring.kafka.bootstrap-servers}")
     private String bootstrapServers;
 
-    // Example: consumer for ScanRequestEvent from "scan-request-topic"
     @Bean
-    public ConsumerFactory<String, ScanRequestEvent> scanRequestConsumerFactory() {
+    public ConsumerFactory<String, String> unifiedConsumerFactory() {
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
-        props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
-        props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "jfc-group");
-        return new DefaultKafkaConsumerFactory<>(
-                props,
-                new StringDeserializer(),
-                new JsonDeserializer<>(ScanRequestEvent.class)
-        );
-    }
-
-    @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, ScanRequestEvent> scanRequestListenerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, ScanRequestEvent> factory =
-                new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(scanRequestConsumerFactory());
-        return factory;
-    }
-
-    // Similar consumer factories for ScanParseEvent, acknowledgements, etc.
-
-    @Bean
-    public ConsumerFactory<String, ScanParseEvent> fileLocationEventConsumerFactory() {
-        Map<String, Object> props = new HashMap<>();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-
-        // Wrap the delegate deserializers in ErrorHandlingDeserializer
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
-
-        // Point to the actual delegates
-        props.put(ErrorHandlingDeserializer.KEY_DESERIALIZER_CLASS, StringDeserializer.class);
-        props.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, JsonDeserializer.class);
-
-        // If you're using JSON, trust all packages or specify your model package
-        props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
-        props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, "com.capstone.JFC.dto.ScanParseEvent");
-        props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
-        // group.id, etc.
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "parser-group");
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
-
-        return new DefaultKafkaConsumerFactory<>(
-                props,
-                new ErrorHandlingDeserializer<>(), // Key
-                new ErrorHandlingDeserializer<>(new JsonDeserializer<>(ScanParseEvent.class))
-        );
-    }
-
-    @Bean
-    public DefaultErrorHandler errorHandler(KafkaTemplate<String, Object> template) {
-        // Retry 3 times (interval=0), then DLT
-        FixedBackOff backOff = new FixedBackOff(0L, 3L);
-        DefaultErrorHandler handler = new DefaultErrorHandler(new DeadLetterPublishingRecoverer(template), backOff);
-        return handler;
-    }
-    @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, ScanParseEvent> fileLocationEventListenerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, ScanParseEvent> factory =
-                new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(fileLocationEventConsumerFactory());
-        return factory;
-    }
-
-    @Bean
-    public ConsumerFactory<String, UpdateAlertEvent> updateAlertEventConsumerFactory() {
-        Map<String, Object> props = new HashMap<>();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
-        props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
-        props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "update-alert-group");
+        // We use StringDeserializer for values so we can parse them manually
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, "jfc-group-unified");
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-        return new DefaultKafkaConsumerFactory<>(
-                props,
-                new StringDeserializer(),
-                new JsonDeserializer<>(UpdateAlertEvent.class)
-        );
+        return new DefaultKafkaConsumerFactory<>(props);
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, UpdateAlertEvent> updateAlertEventListenerContainerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, UpdateAlertEvent> factory =
+    public ConcurrentKafkaListenerContainerFactory<String, String> unifiedListenerContainerFactory(
+            KafkaTemplate<String, Object> template) {
+
+        ConcurrentKafkaListenerContainerFactory<String, String> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(updateAlertEventConsumerFactory());
+        factory.setConsumerFactory(unifiedConsumerFactory());
+
+        // Optional: Add error handler + DLT
+        FixedBackOff backOff = new FixedBackOff(0L, 3L);
+        DefaultErrorHandler errorHandler =
+                new DefaultErrorHandler(new DeadLetterPublishingRecoverer(template), backOff);
+        factory.setCommonErrorHandler(errorHandler);
+
         return factory;
     }
 

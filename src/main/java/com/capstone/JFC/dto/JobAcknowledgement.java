@@ -2,19 +2,19 @@ package com.capstone.JFC.dto;
 
 import java.util.UUID;
 
-import com.capstone.JFC.model.AcknowledgementEvent;
+import com.capstone.JFC.model.AcknowledgementPayload;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class JobAcknowledgement {
 
     private String acknowledgementId;
-    private AcknowledgementEvent payload;
+    private AcknowledgementPayload payload;
 
     @JsonCreator
     public JobAcknowledgement(
             @JsonProperty("acknowledgementId") String acknowledgementId,
-            @JsonProperty("payload") AcknowledgementEvent payload) {
+            @JsonProperty("payload") AcknowledgementPayload payload) {
         this.acknowledgementId = (acknowledgementId == null || acknowledgementId.isEmpty())
                 ? UUID.randomUUID().toString() : acknowledgementId;
         this.payload = payload;
@@ -30,11 +30,11 @@ public class JobAcknowledgement {
         this.acknowledgementId = acknowledgementId;
     }
 
-    public AcknowledgementEvent getPayload() {
+    public AcknowledgementPayload getPayload() {
         return payload;
     }
 
-    public void setPayload(AcknowledgementEvent payload) {
+    public void setPayload(AcknowledgementPayload payload) {
         this.payload = payload;
     }
 

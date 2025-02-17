@@ -1,11 +1,13 @@
 package com.capstone.JFC.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.UUID;
 
 import com.capstone.JFC.model.Event;
 import com.capstone.JFC.model.EventTypes;
 import com.capstone.JFC.model.ScanEvent;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ScanRequestEvent implements Event<ScanEvent> {
     
     private String eventId;

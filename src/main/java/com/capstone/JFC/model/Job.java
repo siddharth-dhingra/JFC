@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 public class Job {
 
     @Id
-    private String jobId; // from the event's eventId or jobId
+    private String jobId; 
 
     @Enumerated(EnumType.STRING)
     private JobCategory jobCategory;
@@ -16,7 +16,7 @@ public class Job {
     private String tenantId;
 
     @Lob
-    private String payload; // JSON or a string representing the details from the event
+    private String payload;
 
     @Enumerated(EnumType.STRING)
     private JobStatus status;
@@ -24,11 +24,13 @@ public class Job {
     private LocalDateTime timestampCreated;
     private LocalDateTime timestampUpdated;
 
+    @Column(name = "destination_topic")
+    private String destinationTopic;
+
     public Job() {}
 
-    // constructor, getters, setters, etc.
     public Job(String jobId, JobCategory jobCategory, String tenantId, String payload,
-               JobStatus status, LocalDateTime timestampCreated, LocalDateTime timestampUpdated) {
+               JobStatus status, LocalDateTime timestampCreated, LocalDateTime timestampUpdated, String destinationTopic) {
         this.jobId = jobId;
         this.jobCategory = jobCategory;
         this.tenantId = tenantId;
@@ -36,6 +38,7 @@ public class Job {
         this.status = status;
         this.timestampCreated = timestampCreated;
         this.timestampUpdated = timestampUpdated;
+        this.destinationTopic = destinationTopic;
     }
 
     public String getJobId() {
@@ -92,5 +95,13 @@ public class Job {
 
     public void setTimestampUpdated(LocalDateTime timestampUpdated) {
         this.timestampUpdated = timestampUpdated;
+    }
+
+    public String getDestinationTopic() {
+        return destinationTopic;
+    }
+
+    public void setDestinationTopic(String destinationTopic) {
+        this.destinationTopic = destinationTopic;
     } 
 }
