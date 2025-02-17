@@ -2,11 +2,13 @@ package com.capstone.JFC.producer;
 
 import com.capstone.JFC.dto.ScanParseEvent;
 import com.capstone.JFC.dto.ScanRequestEvent;
+import com.capstone.JFC.dto.UpdateAlertEvent;
 import com.capstone.JFC.model.FileLocationEvent;
 import com.capstone.JFC.model.Job;
 import com.capstone.JFC.model.JobCategory;
 import com.capstone.JFC.model.ScanEvent;
 import com.capstone.JFC.model.ToolType;
+import com.capstone.JFC.model.UpdateEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +28,9 @@ public class JobFlowProducer {
 
     @Value("${app.kafka.topics.jfc-parser}")
     private String scanParseTopic;
+
+    @Value("${app.kafka.topics.jfc-bgjobs}")
+    private String bgjobsTopic;
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final ObjectMapper objectMapper;
@@ -58,6 +63,14 @@ public class JobFlowProducer {
                         LOGGER.error("Failed to parse FileLocationEvent from payload: {}", j.getPayload());
                     }
                     break;
+                case UPDATE_FINDING:
+                    UpdateEvent updateEvent = parseUpdateEvent(j.getPayload());
+                    if (updateEvent != null) {
+                        publishUpdateAlertEvent(j.getJobId(), updateEvent);
+                    } else {
+                        LOGGER.error("Failed to parse UpdateEvent from payload: {}", j.getPayload());
+                    }
+                    break;
                 default:
                     LOGGER.warn("Job category {} not handled in JobFlowProducer", category);
                     break;
@@ -77,6 +90,12 @@ public class JobFlowProducer {
         ScanParseEvent event = new ScanParseEvent(jobId, payload);
         kafkaTemplate.send(scanParseTopic, event);
         LOGGER.info("Published ScanParseEvent to topic {}: {}", scanParseTopic, event);
+    }
+
+    private void publishUpdateAlertEvent(String jobId, UpdateEvent payload) {
+        UpdateAlertEvent event = new UpdateAlertEvent(jobId, payload);
+        kafkaTemplate.send(bgjobsTopic, event);
+        LOGGER.info("Published UpdateAlertEvent to topic {}: {}", bgjobsTopic, event);
     }
 
     private ScanEvent parseScanEvent(String payload) {
@@ -150,4 +169,76 @@ public class JobFlowProducer {
             }
         }
     }
+
+    private UpdateEvent parseUpdateEvent(String payload) {
+        if (payload == null) {
+            return null;
+        }
+        String trimmed = payload.trim();
+        
+        // If payload appears to be valid JSON, deserialize it
+        if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+            try {
+                return objectMapper.readValue(trimmed, UpdateEvent.class);
+            } catch (Exception e) {
+                LOGGER.error("Error parsing UpdateEvent from JSON payload: {}", payload, e);
+                return null;
+            }
+        }
+        
+        // Otherwise, if it is in the expected custom toString() format, do manual parsing
+        else if (trimmed.startsWith("UpdateEvent")) {
+            try {
+                // Expected format:
+                // UpdateEvent {tenantId=1, toolType=SECRETSCAN, alertNumber=1, newState=resolved, reason=false_positive}
+                String content = trimmed.substring(trimmed.indexOf("{") + 1, trimmed.lastIndexOf("}"));
+                String[] parts = content.split(",");
+                
+                String tenantId = null;
+                ToolType toolType = null;
+                long alertNumber = 0;
+                String newState = null;
+                String reason = null;
+                
+                for (String part : parts) {
+                    part = part.trim();
+                    // Split into key and value (limit=2 ensures we only split on the first '=')
+                    String[] keyValue = part.split("=", 2);
+                    if (keyValue.length != 2) {
+                        continue;
+                    }
+                    String key = keyValue[0].trim();
+                    String value = keyValue[1].replace("'", "").trim();
+                    
+                    switch (key) {
+                        case "tenantId":
+                            tenantId = value;
+                            break;
+                        case "toolType":
+                            toolType = ToolType.valueOf(value);
+                            break;
+                        case "alertNumber":
+                            alertNumber = Long.parseLong(value);
+                            break;
+                        case "newState":
+                            newState = value;
+                            break;
+                        case "reason":
+                            reason = value;
+                            break;
+                        default:
+                            LOGGER.warn("Unexpected key in UpdateEvent payload: {}", key);
+                    }
+                }
+                return new UpdateEvent(tenantId, toolType, alertNumber, newState, reason);
+            } catch (Exception e) {
+                LOGGER.error("Error manually parsing UpdateEvent from payload: {}", payload, e);
+                return null;
+            }
+        } else {
+            LOGGER.error("Payload format unrecognized for UpdateEvent: {}", payload);
+            return null;
+        }
+    }
+        
 }

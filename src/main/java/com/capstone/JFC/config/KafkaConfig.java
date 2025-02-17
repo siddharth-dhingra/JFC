@@ -3,6 +3,8 @@ package com.capstone.JFC.config;
 import com.capstone.JFC.dto.JobAcknowledgement;
 import com.capstone.JFC.dto.ScanParseEvent;
 import com.capstone.JFC.dto.ScanRequestEvent;
+import com.capstone.JFC.dto.UpdateAlertEvent;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -97,6 +99,31 @@ public class KafkaConfig {
         ConcurrentKafkaListenerContainerFactory<String, ScanParseEvent> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(fileLocationEventConsumerFactory());
+        return factory;
+    }
+
+    @Bean
+    public ConsumerFactory<String, UpdateAlertEvent> updateAlertEventConsumerFactory() {
+        Map<String, Object> props = new HashMap<>();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+        props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
+        props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, "update-alert-group");
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        return new DefaultKafkaConsumerFactory<>(
+                props,
+                new StringDeserializer(),
+                new JsonDeserializer<>(UpdateAlertEvent.class)
+        );
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, UpdateAlertEvent> updateAlertEventListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, UpdateAlertEvent> factory =
+                new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(updateAlertEventConsumerFactory());
         return factory;
     }
 
