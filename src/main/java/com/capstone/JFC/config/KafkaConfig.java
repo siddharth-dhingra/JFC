@@ -101,4 +101,14 @@ public class KafkaConfig {
     public KafkaTemplate<String, Object> jfcKafkaTemplate() {
         return new KafkaTemplate<>(jfcProducerFactory());
     }
+
+    @Bean
+    public KafkaTemplate<String, String> stringKafkaTemplate() {
+        Map<String, Object> props = new HashMap<>();
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        ProducerFactory<String, String> producerFactory = new DefaultKafkaProducerFactory<>(props);
+        return new KafkaTemplate<>(producerFactory);
+    }
 }

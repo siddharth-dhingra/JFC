@@ -1,8 +1,10 @@
 package com.capstone.JFC.consumer;
 
+import com.capstone.JFC.handler.CreateTicketEventHandler;
 import com.capstone.JFC.handler.ScanParseEventHandler;
 import com.capstone.JFC.handler.ScanRequestEventHandler;
 import com.capstone.JFC.handler.UpdateAlertEventHandler;
+import com.capstone.JFC.handler.UpdateTicketEventHandler;
 import com.capstone.JFC.model.EventTypes;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,13 +19,19 @@ public class UnifiedConsumer {
     private final ScanRequestEventHandler scanRequestEventHandler;
     private final ScanParseEventHandler scanParseEventHandler;
     private final UpdateAlertEventHandler updateAlertEventHandler;
+    private final CreateTicketEventHandler createTicketEventHandler;
+    private final UpdateTicketEventHandler updateTicketEventHandler;
 
     public UnifiedConsumer(ScanRequestEventHandler scanRequestEventHandler,
                            ScanParseEventHandler scanParseEventHandler,
-                           UpdateAlertEventHandler updateAlertEventHandler) {
+                           UpdateAlertEventHandler updateAlertEventHandler, 
+                           CreateTicketEventHandler createTicketEventHandler,
+                           UpdateTicketEventHandler updateTicketEventHandler) {
         this.scanRequestEventHandler = scanRequestEventHandler;
         this.scanParseEventHandler = scanParseEventHandler;
         this.updateAlertEventHandler = updateAlertEventHandler;
+        this.createTicketEventHandler = createTicketEventHandler;
+        this.updateTicketEventHandler = updateTicketEventHandler;
     }
 
     @KafkaListener(
@@ -46,6 +54,12 @@ public class UnifiedConsumer {
                 break;
             case UPDATE_FINDING:
                 updateAlertEventHandler.handle(message);
+                break;
+            case TICKETING_CREATE:
+                createTicketEventHandler.handle(message);
+                break;
+            case TICKETING_UPDATE:
+                updateTicketEventHandler.handle(message);
                 break;
             default:
                 System.err.println("Unknown event type: " + eventType);

@@ -2,12 +2,14 @@ package com.capstone.JFC.service;
 
 import org.springframework.stereotype.Service;
 
-import com.capstone.JFC.model.ConcurrencyConfig;
+import com.capstone.JFC.model.CategoryConcurrencyConfig;
 import com.capstone.JFC.model.Job;
 import com.capstone.JFC.model.JobCategory;
 import com.capstone.JFC.model.JobStatus;
-import com.capstone.JFC.repository.ConcurrencyConfigRepository;
+import com.capstone.JFC.model.TenantConcurrencyConfig;
+import com.capstone.JFC.repository.CategoryConcurrencyConfigRepository;
 import com.capstone.JFC.repository.JobRepository;
+import com.capstone.JFC.repository.TenantConcurrencyConfigRepository;
 
 import java.util.*;
 import java.time.LocalDateTime;
@@ -16,24 +18,30 @@ import java.time.LocalDateTime;
 public class JobFlowService {
 
     private final JobRepository jobRepository;
-    private final ConcurrencyConfigRepository concurrencyConfigRepository;
+    private final CategoryConcurrencyConfigRepository concurrencyConfigRepository;
+    private final TenantConcurrencyConfigRepository tenantConcurrencyConfigRepository;
 
     public JobFlowService(JobRepository jobRepository,
-                          ConcurrencyConfigRepository concurrencyConfigRepository) {
+                          CategoryConcurrencyConfigRepository concurrencyConfigRepository, TenantConcurrencyConfigRepository tenantConcurrencyConfigRepository) {
         this.jobRepository = jobRepository;
         this.concurrencyConfigRepository = concurrencyConfigRepository;
+        this.tenantConcurrencyConfigRepository = tenantConcurrencyConfigRepository;
     }
 
     private int getJobTypeLimit(String jobTypeKey) {
         return concurrencyConfigRepository.findByConfigKey(jobTypeKey)
-                .map(ConcurrencyConfig::getConfigValue)
+                .map(CategoryConcurrencyConfig::getConfigValue)
                 .orElseThrow(() -> new IllegalStateException("Concurrency configuration for job type key '" + jobTypeKey + "' not found.")); 
     }
 
-    private int getTenantLimit(String tenantKey) {
-        return concurrencyConfigRepository.findByConfigKey(tenantKey)
-                .map(ConcurrencyConfig::getConfigValue)
+    private int getTenantLimit(String categoryKey, String tenantKey) {
+        return tenantConcurrencyConfigRepository.findByCategoryConfigKeyAndTenantConfigKey(categoryKey, tenantKey)
+                .map(TenantConcurrencyConfig::getConfigValue)
                 .orElseThrow(() -> new IllegalStateException("Concurrency configuration for tenant key '" + tenantKey + "' not found."));
+
+        // return concurrencyConfigRepository.findByConfigKey(tenantKey)
+        //         .map(CategoryConcurrencyConfig::getConfigValue)
+        //         .orElseThrow(() -> new IllegalStateException("Concurrency configuration for tenant key '" + tenantKey + "' not found."));
     }
 
     public void createNewJob(String jobId, JobCategory category, String tenantId, String payload, String destinationTopic) {
@@ -72,7 +80,7 @@ public class JobFlowService {
             long tenantCount = jobRepository.countByStatusAndJobCategoryAndTenantId(JobStatus.IN_PROGRESS, category, j.getTenantId());
             tenantInProgressMap.putIfAbsent(j.getTenantId(), tenantCount);
 
-            int tenantLimit = getTenantLimit(j.getTenantId());
+            int tenantLimit = getTenantLimit(jobTypeKey, j.getTenantId());
             if (tenantInProgressMap.get(j.getTenantId()) < tenantLimit) {
                 j.setStatus(JobStatus.READY);
                 j.setTimestampUpdated(LocalDateTime.now());

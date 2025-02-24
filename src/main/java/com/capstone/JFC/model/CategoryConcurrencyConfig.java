@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 
 @Entity
 @Table(name = "concurrency_config")
-public class ConcurrencyConfig {
+public class CategoryConcurrencyConfig {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -16,9 +16,9 @@ public class ConcurrencyConfig {
     @Column(name = "config_value", nullable = false)
     private Integer configValue;
     
-    public ConcurrencyConfig() {}
+    public CategoryConcurrencyConfig() {}
 
-    public ConcurrencyConfig(String configKey, Integer configValue) {
+    public CategoryConcurrencyConfig(String configKey, Integer configValue) {
         this.configKey = configKey;
         this.configValue = configValue;
     }
