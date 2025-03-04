@@ -48,20 +48,5 @@ public class CreateTicketEventHandler implements EventHandler {
             // Log the error and handle the exception
             LOGGER.error("Failed to parse CreateTicketEvent message: {}", message, e);
         }
-        // System.out.println("hello1");
-        // String jobId = UUID.randomUUID().toString();
-        // CreateTicketPayload createTicketEvent = event.getPayload();
-        // String tenantId = createTicketEvent.getTenantId();
-        // String destinationTopic = createTicketEvent.getDestinationTopic();
-
-        // JobCategory category = JobCategory.TICKETING_CREATE;
-
-        // createTicketEvent.setJobId(jobId);
-        // System.out.println("hello2");
-        // String payloadJson = objectMapper.writeValueAsString(createTicketEvent);
-        // jobFlowService.createNewJob(jobId, category, tenantId, payloadJson, destinationTopic);
-        // System.out.println("hello3");
-        // LOGGER.info("Processed ScanParseEvent: jobId={}, tenantId={}, category={}, destinationTopic={}",
-        //         jobId, tenantId, category, destinationTopic);
     }
 }

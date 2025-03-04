@@ -4,10 +4,12 @@ import com.capstone.JFC.model.CreateTicketPayload;
 import com.capstone.JFC.model.FileLocationEvent;
 import com.capstone.JFC.model.Job;
 import com.capstone.JFC.model.JobCategory;
+import com.capstone.JFC.model.RunbookPayload;
 import com.capstone.JFC.model.ScanEvent;
 import com.capstone.JFC.model.UpdateEvent;
 import com.capstone.JFC.model.UpdateTicketPayload;
 import com.capstone.JFC.publisher.CreateTicketPublisher;
+import com.capstone.JFC.publisher.RunbookPublisher;
 import com.capstone.JFC.publisher.ScanParsePublisher;
 import com.capstone.JFC.publisher.ScanPullPublisher;
 import com.capstone.JFC.publisher.UpdateAlertPublisher;
@@ -36,6 +38,7 @@ public class JobFlowProducer {
     private final UpdateAlertPublisher updateAlertPublisher;
     private final UpdateTicketPublisher updateTicketPublisher;
     private final CreateTicketPublisher createTicketPublisher;
+    private final RunbookPublisher runbookPublisher;
 
     public JobFlowProducer(KafkaTemplate<String, String> kafkaTemplate) {
         this.kafkaTemplate = kafkaTemplate;
@@ -45,6 +48,7 @@ public class JobFlowProducer {
         this.updateAlertPublisher = new UpdateAlertPublisher(kafkaTemplate, objectMapper);
         this.updateTicketPublisher = new UpdateTicketPublisher(kafkaTemplate, objectMapper);
         this.createTicketPublisher = new CreateTicketPublisher(kafkaTemplate, objectMapper);
+        this.runbookPublisher = new RunbookPublisher(kafkaTemplate, objectMapper);
     }
 
     public void publishScheduledJobs(JobCategory category, List<Job> jobs) {
@@ -97,6 +101,15 @@ public class JobFlowProducer {
                         updateTicketPublisher.publish(j.getJobId(), updateTicketEvent, j.getDestinationTopic());
                     } else {
                         LOGGER.error("Failed to parse UpdateTicketEvent from payload: {}", j.getPayload());
+                    }
+                    break;
+                case RUNBOOK:
+                    RunbookPayload runbookEvent = parser.parseRunbookEvent(j.getPayload());
+                    if (runbookEvent != null) {
+                        runbookEvent.setJobId(j.getJobId());
+                        runbookPublisher.publish(j.getJobId(), runbookEvent, j.getDestinationTopic());
+                    } else {
+                        LOGGER.error("Failed to parse RunbookEvent from payload: {}", j.getPayload());
                     }
                     break;
                 default:

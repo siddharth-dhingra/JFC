@@ -2,6 +2,7 @@ package com.capstone.JFC.service;
 
 import com.capstone.JFC.model.CreateTicketPayload;
 import com.capstone.JFC.model.FileLocationEvent;
+import com.capstone.JFC.model.RunbookPayload;
 import com.capstone.JFC.model.ScanEvent;
 import com.capstone.JFC.model.UpdateEvent;
 import com.capstone.JFC.model.UpdateTicketPayload;
@@ -73,6 +74,18 @@ public class JobFlowParser {
             return objectMapper.readValue(payload, UpdateTicketPayload.class);
         } catch (Exception e) {
             LOGGER.error("Error parsing UpdateEvent from payload using ObjectMapper: {}", payload, e);
+            return null;
+        }
+    }
+
+    public RunbookPayload parseRunbookEvent(String payload) {
+        if (payload == null || payload.isEmpty()) {
+            return null;
+        }
+        try {
+            return objectMapper.readValue(payload, RunbookPayload.class);
+        } catch (Exception e) {
+            LOGGER.error("Error parsing RunbookEvent from payload using ObjectMapper: {}", payload, e);
             return null;
         }
     }

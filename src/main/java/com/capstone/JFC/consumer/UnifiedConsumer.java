@@ -1,6 +1,7 @@
 package com.capstone.JFC.consumer;
 
 import com.capstone.JFC.handler.CreateTicketEventHandler;
+import com.capstone.JFC.handler.RunbookEventHandler;
 import com.capstone.JFC.handler.ScanParseEventHandler;
 import com.capstone.JFC.handler.ScanRequestEventHandler;
 import com.capstone.JFC.handler.UpdateAlertEventHandler;
@@ -21,17 +22,19 @@ public class UnifiedConsumer {
     private final UpdateAlertEventHandler updateAlertEventHandler;
     private final CreateTicketEventHandler createTicketEventHandler;
     private final UpdateTicketEventHandler updateTicketEventHandler;
+    private final RunbookEventHandler runbookEventHandler;
 
     public UnifiedConsumer(ScanRequestEventHandler scanRequestEventHandler,
                            ScanParseEventHandler scanParseEventHandler,
                            UpdateAlertEventHandler updateAlertEventHandler, 
                            CreateTicketEventHandler createTicketEventHandler,
-                           UpdateTicketEventHandler updateTicketEventHandler) {
+                           UpdateTicketEventHandler updateTicketEventHandler, RunbookEventHandler runbookEventHandler) {
         this.scanRequestEventHandler = scanRequestEventHandler;
         this.scanParseEventHandler = scanParseEventHandler;
         this.updateAlertEventHandler = updateAlertEventHandler;
         this.createTicketEventHandler = createTicketEventHandler;
         this.updateTicketEventHandler = updateTicketEventHandler;
+        this.runbookEventHandler = runbookEventHandler;
     }
 
     @KafkaListener(
@@ -60,6 +63,9 @@ public class UnifiedConsumer {
                 break;
             case TICKETING_UPDATE:
                 updateTicketEventHandler.handle(message);
+                break;
+            case RUNBOOK:
+                runbookEventHandler.handle(message);
                 break;
             default:
                 System.err.println("Unknown event type: " + eventType);
